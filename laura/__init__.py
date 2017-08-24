@@ -65,6 +65,10 @@ class Laura(fredirc.BaseIRCHandler):
         # Parse the HTML document and get the title
         self.client._logger.debug('parsing the document')
         soup = bs4.BeautifulSoup(r.text, 'html.parser')
+        if not soup.title or not soup.title.string:
+            # title not found, abort
+            self.client._logger.debug('no title found')
+            return
         title = soup.title.string
         self.client._logger.debug('title found "%s"', title)
 
