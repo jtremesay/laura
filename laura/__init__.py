@@ -1,8 +1,10 @@
+import argparse
 import bs4
 import fredirc
 import logging
 import re
 import requests
+import sys
 
 
 # Regex for matching HTTP(S) URLs
@@ -135,8 +137,19 @@ class Laura(fredirc.BaseIRCHandler):
         self.client.join(self.channel)
 
 
-def main():
-    """Main function"""
+def main(args=None):
+    """Main function
+    :param args: args of the program. Use sys.argv if None
+    """
+    # Parse args
+    parser = argparse.ArgumentParser(prog='laura')
+    parser.add_argument('-s', '--server', default='irc.zcraft.fr', help='server to join')
+    parser.add_argument('-n', '--nick', default='laura-dev', help='nick of the bot')
+    parser.add_argument('-c', '--channel', default='#sandbot', help='channel to join')
+    if args is None:
+        args = sys.argv[1:]
+    parsed_args = parser.parse_args(args)
+
     # Configure the logger
     logger = logging.getLogger('laura')
     logger.setLevel(logging.DEBUG)
@@ -149,9 +162,9 @@ def main():
     stream_handler.setFormatter(formatter)
 
     # Configuration
-    irc_server = "irc.zcraft.fr"
-    irc_nick = "laura-dev"
-    irc_channel = "#sandbot"
+    irc_server = parsed_args.server
+    irc_nick = parsed_args.nick
+    irc_channel = parsed_args.channel
 
     # Create a Laura instance
     laura = Laura(irc_channel)
