@@ -36,6 +36,83 @@ def extract_http_url(str_):
     return url
 
 
+def get_title(url):
+    """Get the title of an HTTP(S) URL
+    :param url: the URL
+    :return: the title or None
+    """
+    # Get the resource
+    debug('getting the resource')
+    with requests.get(url, stream=True) as r:
+        if r.status_code != 200:
+            # Cannot get the resource, abort
+            debug('error when getting the resource')
+            return None
+
+        # Checks if the ressource is an HTML document
+        if not r.headers['content-type'].startswith('text/html'):
+            # Not the good type, abort
+            debug('invalid resource type "%s"', r.headers['content-type'])
+            return None
+
+        # Read 1M characters from the document
+        document = ''
+        for chunk in r.iter_content(chunk_size=1024, decode_unicode=True):
+            document += chunk
+            if len(document) > 1000000:
+                break
+
+    # Parse the HTML document and get the title
+    debug('parsing the document')
+    soup = bs4.BeautifulSoup(document, 'html.parser')
+    if not soup.title or not soup.title.string:
+        # title not found, abort
+        debug('no title found')
+        return None
+    title = soup.title.string
+    debug('title found "%s"', title)
+
+    return title
+
+
+def send_title(channel, message, client):
+    """Received a message to a channel.
+    :param channel: the channel name
+    :param message: the received message
+    :param client: the IRC client
+    """
+    # Search an HTTP(S) URL in the message
+    debug('searching a HTTP(S) URL in the message')
+    url = extract_http_url(message)
+    if url is None:
+        # URL not found, abort
+        debug('HTTP(S) URL not found')
+        return
+    debug('HTTP(S) URL found "%s"', url)
+
+    # Get the title
+    title = get_title(url)
+    if title is None:
+        # Title not found, abort
+        debug('title not found')
+        return
+
+    # Clean up the title
+    title = title.strip()
+
+    # Check if the title is not empty
+    # This test must be done after cleanup because the cleanup
+    # step can generate an empty title from a non-empty title
+    if not title:
+        # The title is empty, abort
+        debug('empty title')
+        return
+    debug('title cleaned up "%s"', title)
+
+    # Send the title in the channel
+    client.send_message(channel, title)
+
+
 class Laura(fredirc.BaseIRCHandler):
     """Main class"""
     def __init__(self, channel):
@@ -50,53 +127,7 @@ class Laura(fredirc.BaseIRCHandler):
         :param message: the received message
         :param sender: sender of the message
         """
-        # Search an HTTP(S) URL in the message
-        debug('searching a HTTP(S) URL in the message')
-        url = extract_http_url(message)
-        if url is None:
-            # URL not found, abort
-            debug('HTTP(S) URL not found')
-            return
-        debug('HTTP(S) URL found "%s"', url)
-
-        # Get the resource
-        debug('getting the resource')
-        r = requests.get(url)
-        if r.status_code != 200:
-            # Cannot get the resource, abort
-            debug('error when getting the resource')
-            return
-
-        # Checks if the ressource is an HTML document
-        if not r.headers['content-type'].startswith('text/html'):
-            # Not the good type, abort
-            debug('invalid resource type "%s"', r.headers['content-type'])
-            return
-
-        # Parse the HTML document and get the title
-        debug('parsing the document')
-        soup = bs4.BeautifulSoup(r.text, 'html.parser')
-        if not soup.title or not soup.title.string:
-            # title not found, abort
-            debug('no title found')
-            return
-        title = soup.title.string
-        debug('title found "%s"', title)
-
-        # Clean up the title
-        title = title.strip()
-
-        # Check if the title is not empty
-        # This test must be done after cleanup because the cleanup
-        # step can generate an empty title from a non-empty title
-        if not title:
-            # The title is empty, abort
-            debug('empty title')
-            return
-        debug('title cleaned up "%s"', title)
-
-        # Send the title in the channel
-        self.client.send_message(channel, title)
+        send_title(channel, message, self.client)
 
     def handle_register(self):
         """The client successfully registered to the server."""
