@@ -4,8 +4,19 @@ import logging
 import re
 import requests
 
+
 # Regex for matching HTTP(S) URLs
 REGEX_HTTP_URL = re.compile("https?://\S+")
+
+
+def debug(msg, *args, **kwargs):
+    """Log a message with debug level
+    :param msg: the message
+    :param args: positional args
+    :param kwargs: keyword args
+    """
+    logger = logging.getLogger('laura')
+    logger.debug(msg, *args, **kwargs)
 
 
 def extract_http_url(str_):
@@ -95,6 +106,16 @@ class Laura(fredirc.BaseIRCHandler):
 
 def main():
     """Main function"""
+    # Configure the logger
+    logger = logging.getLogger('laura')
+    logger.setLevel(logging.DEBUG)
+
+    formatter = logging.Formatter(
+            '%(asctime)s %(name)s (%(levelname)s): %(message)s')
+
+    stream_handler = logging.StreamHandler()
+    logger.addHandler(stream_handler)
+    stream_handler.setFormatter(formatter)
 
     # Configuration
     irc_server = "irc.zcraft.fr"
