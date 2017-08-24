@@ -51,37 +51,37 @@ class Laura(fredirc.BaseIRCHandler):
         :param sender: sender of the message
         """
         # Search an HTTP(S) URL in the message
-        self.client._logger.debug('searching a HTTP(S) URL in the message')
+        debug('searching a HTTP(S) URL in the message')
         url = extract_http_url(message)
         if url is None:
             # URL not found, abort
-            self.client._logger.debug('HTTP(S) URL not found')
+            debug('HTTP(S) URL not found')
             return
-        self.client._logger.debug('HTTP(S) URL found "%s"', url)
+        debug('HTTP(S) URL found "%s"', url)
 
         # Get the resource
-        self.client._logger.debug('getting the resource')
+        debug('getting the resource')
         r = requests.get(url)
         if r.status_code != 200:
             # Cannot get the resource, abort
-            self.client._logger.debug('error when getting the resource')
+            debug('error when getting the resource')
             return
 
         # Checks if the ressource is an HTML document
         if not r.headers['content-type'].startswith('text/html'):
             # Not the good type, abort
-            self.client._logger.debug('invalid resource type "%s"', r.headers['content-type'])
+            debug('invalid resource type "%s"', r.headers['content-type'])
             return
 
         # Parse the HTML document and get the title
-        self.client._logger.debug('parsing the document')
+        debug('parsing the document')
         soup = bs4.BeautifulSoup(r.text, 'html.parser')
         if not soup.title or not soup.title.string:
             # title not found, abort
-            self.client._logger.debug('no title found')
+            debug('no title found')
             return
         title = soup.title.string
-        self.client._logger.debug('title found "%s"', title)
+        debug('title found "%s"', title)
 
         # Clean up the title
         title = title.strip()
@@ -91,9 +91,9 @@ class Laura(fredirc.BaseIRCHandler):
         # step can generate an empty title from a non-empty title
         if not title:
             # The title is empty, abort
-            self.client._logger.debug('empty title')
+            debug('empty title')
             return
-        self.client._logger.debug('title cleaned up "%s"', title)
+        debug('title cleaned up "%s"', title)
 
         # Send the title in the channel
         self.client.send_message(channel, title)
