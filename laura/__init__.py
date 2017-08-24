@@ -150,9 +150,8 @@ def main():
 
     # Configuration
     irc_server = "irc.zcraft.fr"
-    irc_nick = "laura"
+    irc_nick = "laura-dev"
     irc_channel = "#sandbot"
-    irc_channel = "#kamoulox"
 
     # Create a Laura instance
     laura = Laura(irc_channel)
