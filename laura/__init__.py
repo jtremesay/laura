@@ -2,6 +2,7 @@ import argparse
 import bs4
 import fredirc
 import logging
+import random
 import re
 import requests
 import sys
@@ -117,11 +118,14 @@ def send_title(channel, message, client):
 
 class Laura(fredirc.BaseIRCHandler):
     """Main class"""
-    def __init__(self, channel):
+    def __init__(self, channel, nick):
         """Constructor
         :param channel: channel to join when connection is made
+        :param nick: Nick of the bot
         """
         self.channel = channel
+        self.nick = nick
+        self.real_nick = None
 
     def handle_channel_message(self, channel, message, sender):
         """Received a message to a channel.
@@ -130,6 +134,30 @@ class Laura(fredirc.BaseIRCHandler):
         :param sender: sender of the message
         """
         send_title(channel, message, self.client)
+
+    def handle_error(self, error, **params):
+        """Handle an error
+        :param error: 3-digit error code (between 400 and 599)
+        :params  params: Parameters of the error message, each consisting of
+                a parameter name and a value.
+        """
+        debug('handling error %i', error)
+        if error == fredirc.Err.NICKNAMEINUSE:
+            # Pseudo already in use, generate a new nick
+            debug('nick "%s" already in use', params['nick'])
+            nick = '{}{}'.format(self.nick, random.randint(0, 100))
+            debug('changing nick to "%s"', nick)
+            self.client.change_nick(nick)
+            return
+
+    def handle_own_nick_change(self, old_nick, new_nick):
+        """ The IRCCLient's nick name changed.
+        :param old_nick: the old nick name.
+        :param new_nick: the new nick name.
+        """
+        # Register the new nick
+        debug('new nick is "%s"', new_nick)
+        self.real_nick = new_nick
 
     def handle_register(self):
         """The client successfully registered to the server."""
@@ -167,7 +195,7 @@ def main(args=None):
     irc_channel = parsed_args.channel
 
     # Create a Laura instance
-    laura = Laura(irc_channel)
+    laura = Laura(irc_channel, irc_nick)
 
     # Create a client and start it
     client = fredirc.IRCClient(laura, irc_nick, irc_server)
