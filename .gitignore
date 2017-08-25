@@ -1,5 +1,7 @@
 *.log
 *.pyc
 .idea/
+build/
+dist/
 laura.egg-info/
 venv/
