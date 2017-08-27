@@ -22,34 +22,32 @@ def debug(msg, *args, **kwargs):
     logger.debug(msg, *args, **kwargs)
 
 
-def extract_http_url(str_):
-    """Extract a HTTP(S) URL from a string
-    :param str_: the string
-    :return: the first HTTP(s) URL found or None otherwise
+def extract_http_urls_from_message(message):
+    """Extract HTTP(S) URLs from a message
+    :param message: the message
+    :return: iterator to found HTTP(s) URLs in the message
     """
-    # Use a regex for searching a URL
-    result = REGEX_HTTP_URL.search(str_)
-    if result is None:
-        # No URL found, return None
-        return None
+    # Use a regex for searching the URLs
+    debug('searching HTTP(s) urls in message "%s"', message)
+    urls = REGEX_HTTP_URL.findall(message)
 
-    # Get the URL from the match result
-    url = result.group(0)
-
-    return url
+    # Yield the urls
+    for url in urls:
+        yield url
 
 
-def get_title(url):
-    """Get the title of an HTTP(S) URL
+def get_title_from_url(url):
+    """Get the title from an HTTP(S) URL
     :param url: the URL
     :return: the title or None
     """
     # Get the resource
-    debug('getting the resource')
+    debug('getting the resource from url "%s"', url)
     with requests.get(url, stream=True) as r:
         if r.status_code != 200:
             # Cannot get the resource, abort
-            debug('error when getting the resource')
+            debug('invalid status_code %i', r.status_code)
+
             return None
 
         # Checks if the ressource is an HTML document
@@ -78,41 +76,61 @@ def get_title(url):
     return title
 
 
-def send_title(channel, message, client):
-    """Received a message to a channel.
+def cleanup_title(title):
+    """Cleanup a title
+    :param title: the title
+    :return: the cleaned up title
+    """
+    # Strip the title
+    title = title.strip()
+
+    return title
+
+
+def get_titles_from_message(message, clean_title=True):
+    """Get titles of HTTP(S) URLs presents in the message
+    :param message: the message
+    :return: Iterator to found title
+    """
+    # Extract URLs from the message
+    urls = extract_http_urls_from_message(message)
+
+    # Get titles
+    titles = map(get_title_from_url, urls)
+
+    # Remove None results
+    titles = filter(lambda title: title is not None, titles)
+
+    # Clean titles
+    if clean_title:
+        # Clean titles
+        titles = map(cleanup_title, titles)
+
+        # Remove empty titles
+        titles = filter(lambda title: title, titles)
+
+    # Yield titles
+    for title in titles:
+        yield title
+
+
+def title_displayer(channel, message, client):
+    """Send the title of a link present in the message
     :param channel: the channel name
     :param message: the received message
     :param client: the IRC client
     """
-    # Search an HTTP(S) URL in the message
-    debug('searching a HTTP(S) URL in the message')
-    url = extract_http_url(message)
-    if url is None:
-        # URL not found, abort
-        debug('HTTP(S) URL not found')
-        return
-    debug('HTTP(S) URL found "%s"', url)
+    # Get titles from message
+    titles = get_titles_from_message(message)
 
-    # Get the title
-    title = get_title(url)
-    if title is None:
-        # Title not found, abort
-        debug('title not found')
+    # Get the first title
+    try:
+        title = next(titles)
+    except StopIteration:
+        # No title found, abort
         return
 
-    # Clean up the title
-    title = title.strip()
-
-    # Check if the title is not empty
-    # This test must be done after cleanup because the cleanup
-    # step can generate an empty title from a non-empty title
-    if not title:
-        # The title is empty, abort
-        debug('empty title')
-        return
-    debug('title cleaned up "%s"', title)
-
-    # Send the title in the channel
+    # Send the title to the channel
     client.send_message(channel, title)
 
 
@@ -128,12 +146,13 @@ class Laura(fredirc.BaseIRCHandler):
         self.real_nick = None
 
     def handle_channel_message(self, channel, message, sender):
-        """Received a message to a channel.
+        """Received a message from a channel.
         :param channel: the channel name
         :param message: the received message
         :param sender: sender of the message
         """
-        send_title(channel, message, self.client)
+        # Display the title of an url present in the message
+        title_displayer(channel, message, self.client)
 
     def handle_error(self, error, **params):
         """Handle an error
