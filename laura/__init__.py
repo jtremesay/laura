@@ -43,25 +43,30 @@ def get_title_from_url(url):
     """
     # Get the resource
     debug('getting the resource from url "%s"', url)
-    with requests.get(url, stream=True) as r:
-        if r.status_code != 200:
-            # Cannot get the resource, abort
-            debug('invalid status_code %i', r.status_code)
+    try:
+        with requests.get(url, stream=True) as r:
+            if r.status_code != 200:
+                # Cannot get the resource, abort
+                debug('invalid status_code %i', r.status_code)
 
-            return None
+                return None
 
-        # Checks if the ressource is an HTML document
-        if not r.headers['content-type'].startswith('text/html'):
-            # Not the good type, abort
-            debug('invalid resource type "%s"', r.headers['content-type'])
-            return None
-
-        # Read 1M characters from the document
-        document = ''
-        for chunk in r.iter_content(chunk_size=1024, decode_unicode=True):
-            document += chunk
-            if len(document) > 1000000:
-                break
+            # Checks if the ressource is an HTML document
+            if not r.headers['content-type'].startswith('text/html'):
+                # Not the good type, abort
+                debug('invalid resource type "%s"', r.headers['content-type'])
+                return None
+    
+            # Read 1M characters from the document
+            document = ''
+            for chunk in r.iter_content(chunk_size=1024, decode_unicode=True):
+                document += chunk
+                if len(document) > 1000000:
+                    break
+    except requests.ConnectionError as e:
+        debug('exception when getting content: %s', e)
+        
+        return None
 
     # Parse the HTML document and get the title
     debug('parsing the document')
