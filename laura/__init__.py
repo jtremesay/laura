@@ -23,7 +23,6 @@ def main(args=None):
     args_parser.add_argument(
         "--webhook-port", type=int, default=80, help="Webhook port"
     )
-    args_parser.add_argument("--webhook-url-path", help="Webhook url path")
     args_parser.add_argument("--webhook-url", help="Webhook url")
     parsed_args = args_parser.parse_args(args)
 
@@ -58,9 +57,10 @@ def main(args=None):
         updater.start_webhook(
             listen=parsed_args.webhook_host,
             port=parsed_args.webhook_port,
-            url_path=parsed_args.webhook_url_path,
-            webhook_url=parsed_args.webhook_url,
+            url_path=token,
         )
+        updater.bot.set_webhook(parsed_args.webhook_url + " / " + token)
+        updater.idle()
     else:
         logging.info("Starting polling...")
         updater.start_polling()
