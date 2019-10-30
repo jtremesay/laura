@@ -15,10 +15,16 @@ def ping(update, context):
 
 def main(args=None):
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument("-w", "--use-webhook", action="store_true", help="Use webhook instead of polling")
-    args_parser.add_argument("-p", "--port", type=int, help="Port used for the webhook", default=80)
-    args_parser.add_argument("--webhook-url", help="URL used for the webhook")
     args_parser.add_argument("-v", "--verbose", action="store_true")
+    args_parser.add_argument(
+        "--use-webhook", action="store_true", help="Use webhook instead of polling"
+    )
+    args_parser.add_argument("--webhook-host", default="0.0.0.0", help="Webhook host")
+    args_parser.add_argument(
+        "--webhook-port", type=int, default=80, help="Webhook port"
+    )
+    args_parser.add_argument("--webhook-url-path", help="Webhook url path")
+    args_parser.add_argument("--webhook-url", help="Webhook url")
     parsed_args = args_parser.parse_args(args)
 
     logging.basicConfig(
@@ -44,10 +50,17 @@ def main(args=None):
 
     # Start the bot
     if parsed_args.use_webhook:
-        port = parsed_args.port
-        url = parsed_args.webhook_url
-        logging.info("Starting webhook on port %i...", parsed_args.port)
-        updater.start_webhook(listen="0.0.0.0", port=port, webhook_url=url)
+        logging.info(
+            "Starting webhook on %s:%i",
+            parsed_args.webhook_host,
+            parsed_args.webhook_port,
+        )
+        updater.start_webhook(
+            listen=parsed_args.webhook_host,
+            port=parsed_args.webhook_port,
+            url_path=parsed_args.webhook_url_path,
+            webhook_url=parsed_args.webhook_url,
+        )
     else:
         logging.info("Starting polling...")
         updater.start_polling()
