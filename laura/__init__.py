@@ -7,10 +7,7 @@ from telegram.ext import CommandHandler, Updater
 
 
 def ping(update, context):
-    context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text="@{} pong".format(update.effective_user.first_name),
-    )
+    update.message.reply_text("pong")
 
 
 def main(args=None):
@@ -39,13 +36,12 @@ def main(args=None):
         return
 
     # Create the updater
-    logging.info("Creating updater...")
+    logging.info("Creating updater")
     updater = Updater(token=token, use_context=True)
-    dispatcher = updater.dispatcher
 
     # Ping command
-    logging.info("Registering command ping...")
-    dispatcher.add_handler(CommandHandler("ping", ping))
+    logging.info("Registering commands")
+    updater.dispatcher.add_handler(CommandHandler("ping", ping))
 
     # Start the bot
     if parsed_args.use_webhook:
@@ -62,7 +58,7 @@ def main(args=None):
         updater.bot.set_webhook(parsed_args.webhook_url + "/" + token)
         updater.idle()
     else:
-        logging.info("Starting polling...")
+        logging.info("Starting polling")
         updater.start_polling()
 
 
