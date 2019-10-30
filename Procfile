@@ -1,1 +1,1 @@
-worker: python -m laura
+web: python -m laura --port $PORT

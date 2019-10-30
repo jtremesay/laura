@@ -1,4 +1,5 @@
 import abc
+import argparse
 import logging
 import os
 import subprocess
@@ -12,21 +13,25 @@ def ping(update, context):
     )
 
 
-def main():
+def main(args=None):
+    args_parser = argparse.ArgumentParser()
+    args_parser.add_argument("-p", "--port", type=int, help="Port used for the webhook")
+    args_parser.add_argument("-v", "--verbose", action="store_true")
+    parsed_args = args_parser.parse_args(args)
+
     logging.basicConfig(
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        level=logging.INFO,
+        level=logging.INFO if not parsed_args.verbose else logging.DEBUG,
     )
 
+    # Get the access token
     try:
         token = os.environ["LAURA_ACCESS_TOKEN"]
     except KeyError:
         logging.fatal("Access token not defined")
         return
 
-    logging.debug("Access token is XXXX")
-
-
+    # Create the updater
     logging.info("Creating updater...")
     updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
@@ -36,8 +41,12 @@ def main():
     dispatcher.add_handler(CommandHandler("ping", ping))
 
     # Start the bot
-    logging.info("Starting polling...")
-    updater.start_polling()
+    if parsed_args.port:
+        logging.info("Starting webhook on port %i...", parsed_args.port)
+        updater.start_webhook(listen="0.0.0.0", port=parsed_args.port)
+    else:
+        logging.info("Starting polling...")
+        updater.start_polling()
 
 
 if __name__ == "__main__":
