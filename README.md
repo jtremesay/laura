@@ -1,2 +1,2 @@
 # Laura
-[![Build Status](https://travis-ci.org/killruana/laura.svg?branch=master)](https://travis-ci.org/killruana/laura)
+[![Build Status](https://jenkins.slaanesh.org/job/laura/badge/icon)](https://jenkins.slaanesh.org/job/laura/)
