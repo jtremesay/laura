@@ -59,7 +59,7 @@ def main(args=None):
             port=parsed_args.webhook_port,
             url_path=token,
         )
-        updater.bot.set_webhook(parsed_args.webhook_url + " / " + token)
+        updater.bot.set_webhook(parsed_args.webhook_url + "/" + token)
         updater.idle()
     else:
         logging.info("Starting polling...")
