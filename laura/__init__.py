@@ -15,7 +15,9 @@ def ping(update, context):
 
 def main(args=None):
     args_parser = argparse.ArgumentParser()
-    args_parser.add_argument("-p", "--port", type=int, help="Port used for the webhook")
+    args_parser.add_argument("-w", "--use-webhook", action="store_true", help="Use webhook instead of polling")
+    args_parser.add_argument("-p", "--port", type=int, help="Port used for the webhook", default=80)
+    args_parser.add_argument("--webhook-url", help="URL used for the webhook")
     args_parser.add_argument("-v", "--verbose", action="store_true")
     parsed_args = args_parser.parse_args(args)
 
@@ -41,9 +43,11 @@ def main(args=None):
     dispatcher.add_handler(CommandHandler("ping", ping))
 
     # Start the bot
-    if parsed_args.port:
+    if parsed_args.use_webhook:
+        port = parsed_args.port
+        url = parsed_args.webhook_url
         logging.info("Starting webhook on port %i...", parsed_args.port)
-        updater.start_webhook(listen="0.0.0.0", port=parsed_args.port)
+        updater.start_webhook(listen="0.0.0.0", port=port, webhook_url=url)
     else:
         logging.info("Starting polling...")
         updater.start_polling()

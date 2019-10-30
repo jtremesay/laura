@@ -1,1 +1,1 @@
-web: python -m laura --port $PORT
+web: python -m laura --use-webhook --port $PORT --webhook-url $LAURA_WEBHOOK_URL
