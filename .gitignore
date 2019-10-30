@@ -1,6 +1,7 @@
 *.log
 *.pyc
 .idea/
+.vscode/
 build/
 dist/
 laura.egg-info/
