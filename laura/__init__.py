@@ -13,24 +13,30 @@ def ping(update, context):
 
 
 def main():
-    try:
-        token = os.environ["LAURA_ACCESS_TOKEN"]
-    except KeyError:
-        print("FATAL: Access token not found")
-        return
-
     logging.basicConfig(
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         level=logging.INFO,
     )
 
+    try:
+        token = os.environ["LAURA_ACCESS_TOKEN"]
+    except KeyError:
+        logging.fatal("Access token not defined")
+        return
+
+    logging.debug("Access token is XXXX")
+
+
+    logging.info("Creating updater...")
     updater = Updater(token=token, use_context=True)
     dispatcher = updater.dispatcher
 
     # Ping command
+    logging.info("Registering command ping...")
     dispatcher.add_handler(CommandHandler("ping", ping))
 
     # Start the bot
+    logging.info("Starting polling...")
     updater.start_polling()
 
 
